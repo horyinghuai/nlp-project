@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Resume Portal</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+    <div class="hero-container">
+        <div class="content-wrapper">
+            <div class="text-section">
+                <h1>Smart Resume <br>Analyzer Portal</h1>
+                <p>Unlock insights from resumes instantly using Natural Language Processing.</p>
+                
+                <div class="features">
+                    <span>✔ Extract Skills</span>
+                    <span>✔ Detect Experience</span>
+                    <span>✔ Parse Contacts</span>
+                </div>
+            </div>
+
+            <div class="upload-section">
+                <div class="glass-card">
+                    <h3>Upload Resume</h3>
+                    <p>Supported Format: PDF</p>
+                    <form action="/analyze" method="post" enctype="multipart/form-data">
+                        <label for="file-upload" class="custom-file-upload">
+                            📂 Choose PDF
+                        </label>
+                        <input id="file-upload" type="file" name="file" accept=".pdf" required>
+                        <button type="submit" class="analyze-btn">Analyze Now</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="chat-widget">
+        <div id="chat-header">
+            <span>🤖 Assistant</span>
+            <span class="close-btn" onclick="toggleChat()">×</span>
+        </div>
+        <div id="chat-body">
+            <div class="bot-msg">Hello! Ask me how to upload.</div>
+        </div>
+        <div class="chat-input-area">
+            <input type="text" id="chat-input" placeholder="Type here..." onkeypress="handleEnter(event)">
+            <button onclick="sendMessage()">➤</button>
+        </div>
+    </div>
+
+    <button id="chat-toggle" onclick="toggleChat()">
+        <svg viewBox="0 0 24 24" width="30" height="30" fill="white">
+            <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/>
+        </svg>
+    </button>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

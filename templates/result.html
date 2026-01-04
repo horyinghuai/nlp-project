@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Analysis Report</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="result-page">
+    <div class="navbar">
+        <h2>Analysis Report</h2>
+        <a href="/" class="nav-btn">Upload New</a>
+    </div>
+
+    <div class="result-container">
+        <div class="header-card">
+            <h1>{{ data.name }}</h1>
+            <div class="contact-grid">
+                <div class="contact-item">
+                    <strong>Emails:</strong>
+                    {% for email in data.emails %}
+                        <span>{{ email }}</span>
+                    {% else %} <span>Not Found</span> {% endfor %}
+                </div>
+                <div class="contact-item">
+                    <strong>Phones:</strong>
+                    {% for phone in data.phones %}
+                        <span>{{ phone }}</span>
+                    {% else %} <span>Not Found</span> {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="details-grid">
+            <div class="card">
+                <h3>🛠 Skills Detected</h3>
+                <div class="tags">
+                    {% for skill in data.skills %}
+                        <span class="tag">{{ skill }}</span>
+                    {% else %}
+                        <p>No specific skills matched.</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="card full-width">
+                <h3>💼 Experience</h3>
+                <ul class="list-content">
+                    {% for line in data.experience %}
+                        <li>{{ line }}</li>
+                    {% else %}
+                        <li>No experience section detected.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <div class="card full-width">
+                <h3>🎓 Education</h3>
+                <ul class="list-content">
+                    {% for line in data.education %}
+                        <li>{{ line }}</li>
+                    {% else %}
+                        <li>No education section detected.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
