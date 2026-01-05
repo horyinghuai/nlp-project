@@ -15,8 +15,8 @@
                 <p>Unlock insights from resumes instantly using Natural Language Processing.</p>
                 
                 <div class="features">
-                    <span>✔ Extract Skills</span>
-                    <span>✔ Detect Experience</span>
+                    <span>✔ Extract All Skills</span>
+                    <span>✔ Merge Achievements</span>
                     <span>✔ Parse Contacts</span>
                 </div>
             </div>
@@ -25,11 +25,20 @@
                 <div class="glass-card">
                     <h3>Upload Resume</h3>
                     <p>Supported Format: PDF</p>
-                    <form action="/analyze" method="post" enctype="multipart/form-data">
-                        <label for="file-upload" class="custom-file-upload">
+                    <form action="/analyze" method="post" enctype="multipart/form-data" id="upload-form">
+                        
+                        <label for="file-upload" class="custom-file-upload" id="upload-label">
                             📂 Choose PDF
                         </label>
-                        <input id="file-upload" type="file" name="file" accept=".pdf" required>
+                        
+                        <input id="file-upload" type="file" name="file" accept=".pdf" onchange="handleFileSelect(this)" required>
+                        
+                        <div id="file-display" class="file-display" style="display: none;">
+                            <span class="file-icon">📄</span>
+                            <span id="file-name">filename.pdf</span>
+                            <button type="button" class="remove-file-btn" onclick="removeFile()" title="Cancel / Remove">×</button>
+                        </div>
+
                         <button type="submit" class="analyze-btn">Analyze Now</button>
                     </form>
                 </div>

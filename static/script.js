@@ -1,6 +1,6 @@
+// Chatbot Logic
 function toggleChat() {
     var chat = document.getElementById("chat-widget");
-    // This adds/removes the 'active' class, triggering the CSS transition
     chat.classList.toggle("active");
 }
 
@@ -17,7 +17,6 @@ function sendMessage() {
     chatBody.innerHTML += `<div class="user-msg">${message}</div>`;
     input.value = "";
     
-    // Auto-scroll to bottom
     chatBody.scrollTop = chatBody.scrollHeight;
 
     fetch('/chat', {
@@ -30,4 +29,27 @@ function sendMessage() {
         chatBody.innerHTML += `<div class="bot-msg">${data.reply}</div>`;
         chatBody.scrollTop = chatBody.scrollHeight;
     });
+}
+
+// File Upload Logic (New)
+function handleFileSelect(input) {
+    if (input.files && input.files[0]) {
+        var file = input.files[0];
+        
+        // Update file name in display
+        document.getElementById('file-name').textContent = file.name;
+        
+        // Hide upload label, show display
+        document.getElementById('upload-label').style.display = 'none';
+        document.getElementById('file-display').style.display = 'flex';
+    }
+}
+
+function removeFile() {
+    var input = document.getElementById('file-upload');
+    input.value = ""; // Clear the input
+    
+    // Hide display, show upload label
+    document.getElementById('file-display').style.display = 'none';
+    document.getElementById('upload-label').style.display = 'block';
 }
