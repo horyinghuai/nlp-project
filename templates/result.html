@@ -15,18 +15,10 @@
             <h1>{{ data.name }}</h1>
             <div class="contact-grid">
                 <div class="contact-item">
-                    <strong>Emails:</strong>
-                    {% for email in data.emails %}
-                        <span>{{ email }}</span>
-                    {% else %} <span>Not Found</span> {% endfor %}
+                    <strong>Email:</strong>
+                    <span>{{ data.email }}</span>
                 </div>
-                <div class="contact-item">
-                    <strong>Phones:</strong>
-                    {% for phone in data.phones %}
-                        <span>{{ phone }}</span>
-                    {% else %} <span>Not Found</span> {% endfor %}
                 </div>
-            </div>
         </div>
 
         <div class="details-grid">
@@ -36,31 +28,48 @@
                     {% for skill in data.skills %}
                         <span class="tag">{{ skill }}</span>
                     {% else %}
-                        <p>No specific skills matched.</p>
+                        <p>No specific skills extracted.</p>
                     {% endfor %}
                 </div>
             </div>
 
             <div class="card full-width">
                 <h3>💼 Experience</h3>
-                <ul class="list-content">
-                    {% for line in data.experience %}
-                        <li>{{ line }}</li>
+                <div class="experience-list">
+                    {% for job in data.experience %}
+                        <div class="job-entry">
+                            {% if job.title %}
+                                <h4 class="job-title">{{ job.title }}</h4>
+                            {% endif %}
+                            
+                            {% if job.company %}
+                                <h5 class="job-company">{{ job.company }}</h5>
+                            {% endif %}
+                            
+                            <p class="job-content">{{ job.content }}</p>
+                        </div>
                     {% else %}
-                        <li>No experience section detected.</li>
+                        <p>No experience section detected.</p>
                     {% endfor %}
-                </ul>
+                </div>
             </div>
 
             <div class="card full-width">
                 <h3>🎓 Education</h3>
-                <ul class="list-content">
-                    {% for line in data.education %}
-                        <li>{{ line }}</li>
+                <div class="education-list">
+                    {% for edu in data.education %}
+                        <div class="edu-entry">
+                            <h4 class="edu-course">{{ edu.course }}</h4>
+                            <div class="edu-details">
+                                {% if edu.university %} <span>🏛 {{ edu.university }}</span> {% endif %}
+                                {% if edu.location %} <span>📍 {{ edu.location }}</span> {% endif %}
+                                {% if edu.period %} <span>📅 {{ edu.period }}</span> {% endif %}
+                            </div>
+                        </div>
                     {% else %}
-                        <li>No education section detected.</li>
+                        <p>No education section detected.</p>
                     {% endfor %}
-                </ul>
+                </div>
             </div>
         </div>
     </div>
