@@ -76,40 +76,105 @@ def extract_section(text, section_name):
 
 def parse_skills(lines):
     """
-    Extracts skills individually, splitting by commas/newlines but keeping () together.
+    Extracts skills strictly.
+    Separates by comma, fullstop, semicolon, pipe, slash, bullet points, and newlines.
     """
-    text = " ".join(lines)
+    # Join all lines first to treat as a block of text
+    text = "\n".join(lines)
+    
+    # User Requirement: Separate by symbols (comma, fullstop, semicolon, etc.)
+    # We split by: , . ; : | / • · and newlines
+    # Regex pattern matches any of these characters
+    raw_skills = re.split(r'[,\.\;\:\/\|\•\·\n]+', text)
+    
     found_skills = []
     
-    current_word = []
-    paren_depth = 0
-    
-    # Split by these characters
-    delimiters = [',', '•', '·', '|', ';', '/'] 
+    # Filter and clean
+    # Stop words to ignore if they appear in the skills section
+    stop_words = ["skills", "technologies", "include", "following", "proficient", "knowledge", "frameworks", "tools", "competencies", "experienced", "with", "ability", "to", "and", "the"]
 
-    for char in text:
-        if char == '(': paren_depth += 1
-        if char == ')': paren_depth -= 1
+    for token in raw_skills:
+        s = token.strip()
+        # Filter: length > 1, not just digits, and not a stop word
+        if len(s) > 1 and not s.isdigit() and s.lower() not in stop_words:
+            found_skills.append(s)
+    
+    # Return unique skills
+    return list(set(found_skills))
+
+def parse_experience(lines):
+    """
+    Parses experience into the format:
+    Heading: Job Title
+    Subheading: Location (Company or Place)
+    Subheading: Duration
+    Normal: Content
+    """
+    jobs = []
+    current_job = {
+        "title": "", 
+        "location": "", 
+        "duration": "", 
+        "content": [],
+        "company": "" # Mapped from location for compatibility
+    }
+    
+    # Keywords to help identify Job Titles (Headings)
+    job_keywords = ["manager", "engineer", "developer", "consultant", "analyst", "intern", "director", "executive", "assistant", "lead", "specialist", "officer", "architect", "admin", "head", "vice", "president", "representative", "coordinator", "clerk"]
+    
+    # Regex to identify Durations (Subheading)
+    # Matches years (19xx, 20xx), 'Present', 'Current', or months
+    date_pattern = r'\b(19|20)\d{2}\b|present|current|ongoing|\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\b'
+
+    for line in lines:
+        line_clean = line.strip()
+        if not line_clean: continue
+        line_lower = line_clean.lower()
         
-        # Split ONLY if not inside parentheses
-        if (char in delimiters or char == '\n') and paren_depth == 0:
-            word = "".join(current_word).strip()
-            if word and len(word) > 1:
-                found_skills.append(word)
-            current_word = []
-        else:
-            current_word.append(char)
+        # 1. Identify Job Title (Heading)
+        # It usually contains a job keyword and is relatively short
+        is_title_keyword = any(k in line_lower for k in job_keywords)
+        is_header_length = len(line_clean) < 60
+        is_date = re.search(date_pattern, line_lower)
+        
+        # Trigger New Job: If we find a title keyword and we already have a title or content in the current job
+        if is_title_keyword and is_header_length:
+            if current_job["title"]: 
+                # Save previous job
+                current_job["content"] = "\n".join(current_job["content"])
+                current_job["company"] = current_job["location"] # Map location to company field
+                jobs.append(current_job)
+                # Reset
+                current_job = {"title": "", "location": "", "duration": "", "content": [], "company": ""}
             
-    if current_word:
-        word = "".join(current_word).strip()
-        if word and len(word) > 1:
-            found_skills.append(word)
+            # Set Heading
+            current_job["title"] = line_clean
+            continue
 
-    # Filter out generic words
-    stop_words = ["skills", "technologies", "include", "following", "proficient", "knowledge", "frameworks"]
-    final_skills = [s for s in found_skills if s.lower() not in stop_words and len(s) < 40]
-    
-    return list(set(final_skills))
+        # 2. Identify Duration (Subheading)
+        # If line looks like a date, is short, and we haven't set duration yet
+        if is_date and is_header_length and not current_job["duration"]:
+            current_job["duration"] = line_clean
+            continue
+
+        # 3. Identify Location/Company (Subheading)
+        # If it's not a date, we have a title, we don't have a location yet, and it's short
+        # This covers "Company Name" or "Location"
+        if not current_job["location"] and is_header_length and not is_date and current_job["title"]:
+            current_job["location"] = line_clean
+            continue
+            
+        # 4. Normal Content
+        # Append everything else to content
+        current_job["content"].append(line_clean)
+            
+    # Save the last job entry
+    if current_job["title"] or current_job["content"]:
+        current_job["content"] = "\n".join(current_job["content"])
+        current_job["company"] = current_job["location"]
+        jobs.append(current_job)
+        
+    return jobs
 
 def parse_education(lines):
     educations = []
@@ -139,66 +204,6 @@ def parse_education(lines):
         educations.append(current_edu)
         
     return educations
-
-def parse_experience(lines):
-    """
-    Strict extraction of Job Titles and Companies to avoid sentences as headers.
-    """
-    jobs = []
-    current_job = {"title": "", "company": "", "content": []}
-    
-    job_keywords = ["manager", "engineer", "developer", "consultant", "analyst", "intern", "director", "executive", "assistant", "lead", "specialist", "officer", "architect", "admin"]
-    company_keywords = ["sdn", "bhd", "inc", "ltd", "corporation", "corp", "company", "solutions", "technologies", "group", "services", "limited"]
-
-    for line in lines:
-        line_clean = line.strip()
-        line_lower = line_clean.lower()
-        
-        # Validation checks
-        is_date = re.search(r'20\d\d|19\d\d|present', line_lower)
-        is_job_keyword = any(k in line_lower for k in job_keywords)
-        is_company_keyword = any(k in line_lower for k in company_keywords)
-        
-        # A line is a "Header Candidate" if it's short, has no period at end, and contains keywords
-        is_header_candidate = len(line_clean) < 50 and not line_clean.endswith('.')
-        
-        # 1. New Job Entry Trigger
-        if (is_job_keyword or is_date) and len(current_job["content"]) > 1:
-            # Save previous job
-            current_job["content"] = " ".join(current_job["content"])
-            jobs.append(current_job)
-            current_job = {"title": "", "company": "", "content": []}
-
-        # 2. Identify Job Title
-        if not current_job["title"]:
-            if is_header_candidate and (is_job_keyword or line_clean.isupper() or len(line_clean) < 40):
-                # Don't take it if it looks like a date line only
-                if not (is_date and len(line_clean) < 15): 
-                    current_job["title"] = line_clean
-                    continue # Move to next line
-
-        # 3. Identify Company
-        if not current_job["company"]:
-            if is_header_candidate and (is_company_keyword or " at " in line_lower):
-                current_job["company"] = line_clean
-                continue
-
-        # 4. Fallback: If still no title/company, check strict "First Line" rule
-        # Only treat first lines as headers if they are NOT sentences
-        if not current_job["title"] and not current_job["company"] and not current_job["content"]:
-            if is_header_candidate and not is_date:
-                current_job["title"] = line_clean
-                continue
-
-        # 5. Content
-        current_job["content"].append(line_clean)
-            
-    # Save last job
-    if current_job["title"] or current_job["content"]:
-        current_job["content"] = " ".join(current_job["content"])
-        jobs.append(current_job)
-        
-    return jobs
 
 def analyze_resume(text):
     data = {
@@ -262,7 +267,7 @@ def chat():
     responses = {
         "upload": "Click 'Choose PDF' to select a file.",
         "format": "We only support PDF files.",
-        "experience": "I separate Job Titles and Companies, ensuring sentences stay in the description.",
+        "experience": "I separate Job Titles, Locations, Durations and Content.",
         "manual": "Check 'README_System_Manual.txt' in the folder.",
         "hello": "Hi! I'm your Resume Assistant.",
         "default": "I can help with uploading, formats, and explaining how I work."
