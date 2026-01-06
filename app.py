@@ -76,39 +76,62 @@ def extract_section(text, section_name):
 
 def parse_skills(lines):
     """
-    Extracts skills strictly.
-    Separates by comma, fullstop, semicolon, pipe, slash, bullet points, and newlines.
+    Extracts skills individually.
+    Splits by delimiters (comma, fullstop, etc) and newlines.
+    CRITICAL: Does NOT split if text is inside parentheses e.g., "Microsoft (Excel, Word)".
     """
-    # Join all lines first to treat as a block of text
+    # 1. Join lines with newline to treat as one block
     text = "\n".join(lines)
     
-    # User Requirement: Separate by symbols (comma, fullstop, semicolon, etc.)
-    # We split by: , . ; : | / • · and newlines
-    # Regex pattern matches any of these characters
-    raw_skills = re.split(r'[,\.\;\:\/\|\•\·\n]+', text)
-    
     found_skills = []
+    current_skill = ""
+    paren_depth = 0
     
-    # Filter and clean
-    # Stop words to ignore if they appear in the skills section
-    stop_words = ["skills", "technologies", "include", "following", "proficient", "knowledge", "frameworks", "tools", "competencies", "experienced", "with", "ability", "to", "and", "the"]
+    # Delimiters that separate skills
+    delimiters = [',', '.', ';', ':', '|', '/', '•', '·', '\n']
+    
+    for char in text:
+        if char == '(':
+            paren_depth += 1
+            current_skill += char
+        elif char == ')':
+            if paren_depth > 0:
+                paren_depth -= 1
+            current_skill += char
+        elif char in delimiters and paren_depth == 0:
+            # Only split if we are NOT inside parentheses
+            clean_skill = current_skill.strip()
+            if clean_skill:
+                found_skills.append(clean_skill)
+            current_skill = ""
+        else:
+            current_skill += char
+            
+    # Append the last skill if exists
+    if current_skill.strip():
+        found_skills.append(current_skill.strip())
 
-    for token in raw_skills:
-        s = token.strip()
-        # Filter: length > 1, not just digits, and not a stop word
-        if len(s) > 1 and not s.isdigit() and s.lower() not in stop_words:
-            found_skills.append(s)
+    # 2. Filter and Cleanup
+    stop_words = ["skills", "technologies", "include", "following", "proficient", "knowledge", "frameworks", "tools", "competencies", "experienced", "with", "ability", "to", "and", "the"]
+    final_skills = []
     
-    # Return unique skills
-    return list(set(found_skills))
+    for s in list(set(found_skills)):
+        s_clean = s.strip()
+        # Filter: length > 1, not just digits, and not a stop word
+        if len(s_clean) > 1 and not s_clean.isdigit() and s_clean.lower() not in stop_words:
+            final_skills.append(s_clean)
+    
+    return final_skills
 
 def parse_experience(lines):
     """
     Parses experience into the format:
     Heading: Job Title
-    Subheading: Location (Company or Place)
+    Subheading: Location
     Subheading: Duration
     Normal: Content
+    
+    Includes "Sentence Continuity" and "Action Verb" checks to prevent splitting descriptions.
     """
     jobs = []
     current_job = {
@@ -116,56 +139,95 @@ def parse_experience(lines):
         "location": "", 
         "duration": "", 
         "content": [],
-        "company": "" # Mapped from location for compatibility
+        "company": "" 
     }
     
-    # Keywords to help identify Job Titles (Headings)
-    job_keywords = ["manager", "engineer", "developer", "consultant", "analyst", "intern", "director", "executive", "assistant", "lead", "specialist", "officer", "architect", "admin", "head", "vice", "president", "representative", "coordinator", "clerk"]
+    # Keywords to help identify Job Titles
+    # Used \b to ensure "Manager" doesn't match "Managerial" or "Managers" in text unless implicit
+    job_keywords = [
+        "manager", "engineer", "developer", "consultant", "analyst", "intern", "director", 
+        "executive", "assistant", "specialist", "officer", "architect", "admin", 
+        "head", "vice", "president", "representative", "coordinator", "clerk", "founder", 
+        "co-founder", "recruiter", "associate", "lead"
+    ]
     
-    # Regex to identify Durations (Subheading)
-    # Matches years (19xx, 20xx), 'Present', 'Current', or months
+    # Blacklist words: If a line starts with these, it is CONTENT, not a header.
+    # These are commonly bolded in resumes (e.g., "Leading to...", "Collaborated with...")
+    action_verbs = [
+        "leading", "collaborated", "supported", "assisted", "oversaw", "managed", 
+        "used", "introduced", "helping", "ensuring", "refined", "created", 
+        "developed", "leveraged", "facilitated", "administered", "reducing", "smooth"
+    ]
+
+    # Regex for Durations
     date_pattern = r'\b(19|20)\d{2}\b|present|current|ongoing|\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\b'
 
-    for line in lines:
+    for i, line in enumerate(lines):
         line_clean = line.strip()
         if not line_clean: continue
         line_lower = line_clean.lower()
         
-        # 1. Identify Job Title (Heading)
-        # It usually contains a job keyword and is relatively short
-        is_title_keyword = any(k in line_lower for k in job_keywords)
-        is_header_length = len(line_clean) < 60
-        is_date = re.search(date_pattern, line_lower)
+        # --- Context Checks ---
+        is_short_line = len(line_clean) < 85
+        ends_with_period = line_clean.endswith('.')
         
-        # Trigger New Job: If we find a title keyword and we already have a title or content in the current job
-        if is_title_keyword and is_header_length:
+        # Check if the PREVIOUS line looks like it runs into this one (e.g., ends with comma or 'and')
+        # If yes, this line CANNOT be a header.
+        is_continuation = False
+        if i > 0:
+            prev_line = lines[i-1].strip().lower()
+            if prev_line and (prev_line.endswith(',') or prev_line.endswith('and') or not prev_line[-1] in ['.', '!', '?']):
+                 # If previous line was a Date or Location, we don't count it as "text flow"
+                 # But if it was content, then this line is likely content too.
+                 if current_job["content"]:
+                     is_continuation = True
+
+        # Check for keywords using Word Boundaries
+        has_job_keyword = False
+        for k in job_keywords:
+            if re.search(r'\b' + re.escape(k) + r's?\b', line_lower): # s? for optional plural
+                has_job_keyword = True
+                break
+        
+        has_date = re.search(date_pattern, line_lower)
+        starts_with_action = any(line_lower.startswith(v) for v in action_verbs)
+
+        # 1. Job Title Logic
+        # Rules:
+        # - Must contain a Job Keyword
+        # - Must be short-ish
+        # - Must NOT start with an action verb (e.g. "Leading to...")
+        # - Must NOT be a continuation of a previous sentence
+        # - Must NOT look like a date
+        if (is_short_line and has_job_keyword and not starts_with_action 
+            and not is_continuation and not has_date):
+            
+            # Close previous job
             if current_job["title"]: 
-                # Save previous job
                 current_job["content"] = "\n".join(current_job["content"])
-                current_job["company"] = current_job["location"] # Map location to company field
+                current_job["company"] = current_job["location"]
                 jobs.append(current_job)
-                # Reset
                 current_job = {"title": "", "location": "", "duration": "", "content": [], "company": ""}
             
-            # Set Heading
             current_job["title"] = line_clean
             continue
 
-        # 2. Identify Duration (Subheading)
-        # If line looks like a date, is short, and we haven't set duration yet
-        if is_date and is_header_length and not current_job["duration"]:
+        # 2. Duration Logic
+        if (is_short_line and has_date and current_job["title"] 
+            and not current_job["duration"] and not starts_with_action and not is_continuation):
             current_job["duration"] = line_clean
             continue
 
-        # 3. Identify Location/Company (Subheading)
-        # If it's not a date, we have a title, we don't have a location yet, and it's short
-        # This covers "Company Name" or "Location"
-        if not current_job["location"] and is_header_length and not is_date and current_job["title"]:
+        # 3. Location Logic
+        # STRICT CHECK: Only accept location if we are NOT in the middle of content text flow.
+        if (is_short_line and not has_date and current_job["title"] 
+            and not current_job["location"] and not current_job["content"] 
+            and not starts_with_action):
             current_job["location"] = line_clean
             continue
             
-        # 4. Normal Content
-        # Append everything else to content
+        # 4. Content Logic
+        # Everything else is content
         current_job["content"].append(line_clean)
             
     # Save the last job entry
