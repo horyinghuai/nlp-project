@@ -23,7 +23,7 @@
 
         <div class="details-grid">
             <div class="card">
-                <h3>🛠 Top Skills Detected</h3>
+                <h3>🚀 Top Skills Detected</h3>
                 <div class="tags">
                     {% for skill in data.skills %}
                         <span class="tag">{{ skill }}</span>
@@ -46,6 +46,12 @@
                                 <h5 class="job-company">{{ job.company }}</h5>
                             {% endif %}
                             
+                            {% if job.duration %}
+                                <span style="display: block; font-size: 0.95rem; color: #4B5563; margin-bottom: 12px; font-weight: 500;">
+                                    🗓️ {{ job.duration }}
+                                </span>
+                            {% endif %}
+                            
                             <p class="job-content">{{ job.content }}</p>
                         </div>
                     {% else %}
@@ -61,9 +67,9 @@
                         <div class="edu-entry">
                             <h4 class="edu-course">{{ edu.course }}</h4>
                             <div class="edu-details">
-                                {% if edu.university %} <span>🏛 {{ edu.university }}</span> {% endif %}
+                                {% if edu.university %} <span>🏛️ {{ edu.university }}</span> {% endif %}
                                 {% if edu.location %} <span>📍 {{ edu.location }}</span> {% endif %}
-                                {% if edu.period %} <span>📅 {{ edu.period }}</span> {% endif %}
+                                {% if edu.period %} <span>🗓️ {{ edu.period }}</span> {% endif %}
                             </div>
                         </div>
                     {% else %}

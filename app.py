@@ -22,7 +22,6 @@ def extract_section(text, section_name):
     """
     text_lower = text.lower()
     
-    # UPDATED: Added 'certification' (singular), 'key achievements' to stop list
     headers = {
         "education": ["education", "academic background", "academic history", "qualifications", "education & qualifications"],
         "experience": ["experience", "work history", "employment", "work experience", "professional experience", "career history", "career summary"],
@@ -78,89 +77,45 @@ def extract_section(text, section_name):
     return lines
 
 def parse_skills(lines):
-    """
-    Extracts skills individually.
-    Splits by delimiters (comma, fullstop, double space) and newlines.
-    Filters out noise like job titles, dates, and watermark text.
-    """
-    # 1. Join lines with newline to treat as one block
     text = "\n".join(lines)
-    
     found_skills = []
     current_skill = ""
     paren_depth = 0
-    
-    # Delimiters: Added double space handling logic below, strict delimiters here
     delimiters = [',', '.', ';', ':', '|', '/', '•', '·', '\n']
-    
-    # Pre-split by double spaces (often used in resumes to separate columns visually)
-    # Replaces double spaces with a safe delimiter (comma) before processing
     text = text.replace("  ", ",")
 
     for char in text:
-        if char == '(':
-            paren_depth += 1
-            current_skill += char
+        if char == '(': paren_depth += 1; current_skill += char
         elif char == ')':
-            if paren_depth > 0:
-                paren_depth -= 1
+            if paren_depth > 0: paren_depth -= 1
             current_skill += char
         elif char in delimiters and paren_depth == 0:
             clean_skill = current_skill.strip()
-            if clean_skill:
-                found_skills.append(clean_skill)
+            if clean_skill: found_skills.append(clean_skill)
             current_skill = ""
         else:
             current_skill += char
             
-    if current_skill.strip():
-        found_skills.append(current_skill.strip())
+    if current_skill.strip(): found_skills.append(current_skill.strip())
 
-    # 2. Filter and Cleanup
-    
-    # Stop words for noise
-    stop_words = [
-        "skills", "technologies", "include", "following", "proficient", "knowledge", 
-        "frameworks", "tools", "competencies", "experienced", "with", "ability", 
-        "to", "and", "the", "certification", "certified", "course", "courses",
-        "provided", "by", "powered", "enhancv", "www", "http", "https", "com", "page",
-        "email", "linkedin"
-    ]
-    
-    # Terms that indicate this "skill" is actually a Job Title or Experience line bleeding in
+    stop_words = ["skills", "technologies", "include", "following", "proficient", "knowledge", "frameworks", "tools", "competencies", "experienced", "with", "ability", "to", "and", "the", "certification", "certified", "course", "courses", "provided", "by", "powered", "enhancv", "www", "http", "https", "com", "page", "email", "linkedin"]
     job_indicators = ["manager", "assistant", "director", "coordinator", "intern", "consultant"]
-    
-    # Action verbs (if a line starts with these, it's likely a job description)
     action_verbs = ["managed", "led", "developed", "created", "assisted", "coordinated", "analyzed"]
     
     final_skills = []
-    
     for s in list(set(found_skills)):
         s_clean = s.strip()
         s_lower = s_clean.lower()
-        
-        # Validation Checks:
-        # 1. Not too short (>1), not too long (<40)
-        # 2. Not digits
-        # 3. Not a stop word
-        # 4. No URL indicators
-        # 5. No Job Title keywords (prevents "Assistant Marketing Manager" appearing as a skill)
-        # 6. No Date patterns (prevents "2014-2017" appearing as a skill)
-        # 7. Doesn't start with a bullet point char that wasn't cleaned
-        
         is_valid = True
-        
         if len(s_clean) < 2 or len(s_clean) > 40: is_valid = False
         if s_clean.isdigit(): is_valid = False
         if s_lower in stop_words: is_valid = False
         if "www." in s_lower or ".com" in s_lower: is_valid = False
-        
         if any(job in s_lower for job in job_indicators): is_valid = False
         if any(s_lower.startswith(verb) for verb in action_verbs): is_valid = False
-        if re.search(r'\d{4}', s_lower): is_valid = False # Detects years like 2020
+        if re.search(r'\d{4}', s_lower): is_valid = False 
         
-        if is_valid:
-            final_skills.append(s_clean)
+        if is_valid: final_skills.append(s_clean)
     
     return final_skills
 
@@ -168,11 +123,8 @@ def parse_experience(lines):
     """
     Parses experience into the format:
     Heading: Job Title
-    Subheading: Location
-    Subheading: Duration
+    Subheading: Location | Duration
     Normal: Content
-    
-    Includes checks for "Inc." and other company suffixes.
     """
     jobs = []
     current_job = {
@@ -183,28 +135,13 @@ def parse_experience(lines):
         "company": "" 
     }
     
-    # Keywords to help identify Job Titles
-    job_keywords = [
-        "manager", "engineer", "developer", "consultant", "analyst", "intern", "director", 
-        "executive", "assistant", "specialist", "officer", "architect", "admin", 
-        "head", "vice", "president", "representative", "coordinator", "clerk", "founder", 
-        "co-founder", "recruiter", "associate", "lead",
-        "trainee", "receptionist", "staff", "crew", "member"
-    ]
+    job_keywords = ["manager", "engineer", "developer", "consultant", "analyst", "intern", "director", "executive", "assistant", "specialist", "officer", "architect", "admin", "head", "vice", "president", "representative", "coordinator", "clerk", "founder", "co-founder", "recruiter", "associate", "lead", "trainee", "receptionist", "staff", "crew", "member"]
     
-    # Blacklist words: If a line starts with these, it is CONTENT, not a header.
-    action_verbs = [
-        "leading", "collaborated", "supported", "assisted", "oversaw", "managed", 
-        "used", "introduced", "helping", "ensuring", "refined", "created", 
-        "developed", "leveraged", "facilitated", "administered", "reducing", "smooth",
-        "helped", "held", "organized", "monitored", "handled", "analyzed", 
-        "implemented", "optimized", "conducted", "generated", "stored"
-    ]
+    action_verbs = ["leading", "collaborated", "supported", "assisted", "oversaw", "managed", "used", "introduced", "helping", "ensuring", "refined", "created", "developed", "leveraged", "facilitated", "administered", "reducing", "smooth", "helped", "held", "organized", "monitored", "handled", "analyzed", "implemented", "optimized", "conducted", "generated", "stored"]
     
-    # Whitelist suffixes that end with a period but are allowed in headers
     company_suffixes = ["inc.", "corp.", "ltd.", "co.", "llc.", "p.c.", "pvt.", "dept."]
 
-    # Regex for Durations
+    # Regex to detect Years (1990-2099) and keywords like Present/Current
     date_pattern = r'\b(19|20)\d{2}\b|present|current|ongoing|\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\b'
 
     for i, line in enumerate(lines):
@@ -212,22 +149,16 @@ def parse_experience(lines):
         if not line_clean: continue
         line_lower = line_clean.lower()
         
-        # --- Context Checks ---
         is_short_line = len(line_clean) < 100 
         ends_with_period = line_clean.endswith('.') 
-        
-        # Check if it's a valid company abbreviation ending in dot
         is_company_suffix = any(line_lower.endswith(s) for s in company_suffixes)
 
-        # Check if the PREVIOUS line looks like it runs into this one
         is_continuation = False
         if i > 0:
             prev_line = lines[i-1].strip().lower()
             if prev_line and (prev_line.endswith(',') or prev_line.endswith('and') or not prev_line[-1] in ['.', '!', '?', ':']):
-                 if current_job["content"]:
-                     is_continuation = True
+                 if current_job["content"]: is_continuation = True
 
-        # Check for keywords
         has_job_keyword = False
         for k in job_keywords:
             if re.search(r'\b' + re.escape(k) + r's?\b', line_lower): 
@@ -238,23 +169,18 @@ def parse_experience(lines):
         starts_with_action = any(line_lower.startswith(v) for v in action_verbs)
 
         # 1. Job Title Logic
-        if (is_short_line and has_job_keyword and not starts_with_action 
-            and not is_continuation and not ends_with_period):
-            
+        if (is_short_line and has_job_keyword and not starts_with_action and not is_continuation and not ends_with_period):
             if current_job["title"]: 
                 current_job["content"] = "\n".join(current_job["content"])
                 if not current_job["company"] and current_job["location"]:
                     current_job["company"] = current_job["location"]
                 jobs.append(current_job)
                 current_job = {"title": "", "location": "", "duration": "", "content": [], "company": ""}
-            
             current_job["title"] = line_clean
             continue
 
-        # 2. Duration Logic
-        if (is_short_line and has_date and current_job["title"] 
-            and not starts_with_action and not is_continuation and not ends_with_period):
-            
+        # 2. Duration Logic (Detects Year-Year or Year-Current)
+        if (is_short_line and has_date and current_job["title"] and not starts_with_action and not is_continuation and not ends_with_period):
             if not current_job["duration"]:
                 current_job["duration"] = line_clean
             else:
@@ -262,10 +188,7 @@ def parse_experience(lines):
             continue
 
         # 3. Location / Company Logic
-        if (is_short_line and not has_date and current_job["title"] 
-            and not starts_with_action and not is_continuation 
-            and (not ends_with_period or is_company_suffix)):
-            
+        if (is_short_line and not has_date and current_job["title"] and not starts_with_action and not is_continuation and (not ends_with_period or is_company_suffix)):
             if not current_job["company"]:
                 current_job["company"] = line_clean
             elif not current_job["location"]:
@@ -275,7 +198,6 @@ def parse_experience(lines):
         # 4. Content Logic
         current_job["content"].append(line_clean)
             
-    # Save the last job entry
     if current_job["title"] or current_job["content"]:
         current_job["content"] = "\n".join(current_job["content"])
         if not current_job["company"] and current_job["location"]:
@@ -287,19 +209,15 @@ def parse_experience(lines):
 def parse_education(lines):
     educations = []
     current_edu = {}
-    
     degree_keywords = ["bachelor", "master", "bsc", "msc", "phd", "diploma", "degree", "certificate", "foundation"]
     uni_keywords = ["university", "college", "institute", "polytechnic", "school", "academy"]
     
     for line in lines:
         line_lower = line.lower()
         is_degree = any(k in line_lower for k in degree_keywords)
-        
         if is_degree:
-            if current_edu:
-                educations.append(current_edu)
+            if current_edu: educations.append(current_edu)
             current_edu = {"course": line, "university": "", "location": "", "period": ""}
-        
         elif current_edu:
             if any(k in line_lower for k in uni_keywords) and not current_edu["university"]:
                 current_edu["university"] = line
@@ -308,42 +226,23 @@ def parse_education(lines):
             elif "," in line and not re.search(r'\d', line) and not current_edu["location"]:
                  current_edu["location"] = line
                  
-    if current_edu:
-        educations.append(current_edu)
-        
+    if current_edu: educations.append(current_edu)
     return educations
 
 def analyze_resume(text):
-    data = {
-        "name": "Not Found",
-        "email": "Not Found",
-        "skills": [],
-        "education": [],
-        "experience": []
-    }
-
-    # 1. Email
+    data = { "name": "Not Found", "email": "Not Found", "skills": [], "education": [], "experience": [] }
     email_match = re.search(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', text)
-    if email_match:
-        data["email"] = email_match.group(0)
+    if email_match: data["email"] = email_match.group(0)
 
-    # 2. Name
     lines = [line.strip() for line in text.split('\n') if line.strip()]
     if lines:
-        if "resume" not in lines[0].lower():
-            data["name"] = lines[0]
-        else:
-            data["name"] = lines[1] if len(lines) > 1 else "Unknown"
+        if "resume" not in lines[0].lower(): data["name"] = lines[0]
+        else: data["name"] = lines[1] if len(lines) > 1 else "Unknown"
 
-    # 3. Skills
     raw_skills = extract_section(text, "skills")
     data["skills"] = parse_skills(raw_skills)
-
-    # 4. Education
     raw_edu = extract_section(text, "education")
     data["education"] = parse_education(raw_edu)
-    
-    # 5. Experience
     raw_exp = extract_section(text, "experience")
     data["experience"] = parse_experience(raw_exp)
 
@@ -351,16 +250,13 @@ def analyze_resume(text):
 
 # --- ROUTES ---
 @app.route('/')
-def home():
-    return render_template('home.html')
+def home(): return render_template('home.html')
 
 @app.route('/analyze', methods=['POST'])
 def analyze():
-    if 'file' not in request.files:
-        return redirect(request.url)
+    if 'file' not in request.files: return redirect(request.url)
     file = request.files['file']
-    if file.filename == '':
-        return redirect(request.url)
+    if file.filename == '': return redirect(request.url)
     if file:
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
         file.save(filepath)
@@ -384,7 +280,7 @@ def chat():
         "privacy": "Your data is processed locally and deleted immediately after analysis.",
         "cost": "This system is 100% free to use.",
         "feedback": "You can contact our team for any bug reports.",
-        "default": "I apologize, but as a Resume Assistant, I cannot help with unrelated topics. Please try asking questions like 'How do I upload a resume?' or 'What formats are supported?'"
+        "default": "I apologize, but as a Resume Assistant, I cannot help with unrelated topics."
     }
     
     reply = responses["default"]
