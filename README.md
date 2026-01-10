@@ -4,7 +4,7 @@ BAXI 3413 – Natural Language Processing
 ============================================================
 
 ## 1. INTRODUCTION
-The Smart Resume Analyzer Portal is a web-based application that uses Natural Language Processing (NLP) techniques to extract key information such as Name, Email, Skills, and Education from resume PDF files.  
+The Smart Resume Analyzer Portal is a web-based application that uses Natural Language Processing (NLP) techniques to extract key information such as Name, Email, Skills, Experience and Education from resume PDF files.  
 The system also includes an interactive chatbot to assist users.
 
 ## 2. SYSTEM REQUIREMENTS
@@ -13,10 +13,10 @@ The system also includes an interactive chatbot to assist users.
 - Web Browser: Chrome, Edge, or Firefox  
 
 ## 3. INSTALLATION INSTRUCTIONS
-Step 1: Unzip the project folder named Resume_Portal.  
+Step 1: Unzip the project folder named nlp_project.  
 Step 2: Open your terminal or command prompt.  
 Step 3: Navigate to the project directory using the command:  
-cd path/to/Resume_Portal  
+cd path/to/nlp_project  
 Step 4: Install the required Python libraries using the command:  
 pip install -r requirements.txt  
 
@@ -29,8 +29,8 @@ Step 3: Open your web browser and go to:
 http://127.0.0.1:5000  
 
 ## 5. USER GUIDE
-- Uploading: Click “Choose File”, select a PDF resume, and click “Analyze Resume”.  
-- Results: Extracted information will be displayed on a new page.  
+- Upload Resume: Click “Choose File”, select a PDF resume, and click “Analyze Resume”.  
+- Results: Extracted information will be displayed on the next page.  
 - Chatbot: Click the chat bubble at the bottom-right corner to ask questions.  
 
 ## 6. CHATBOT COMMANDS (FAQs)
