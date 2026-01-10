@@ -51,5 +51,5 @@ function removeFile() {
     
     // Hide display, show upload label
     document.getElementById('file-display').style.display = 'none';
-    document.getElementById('upload-label').style.display = 'block';
+    document.getElementById('upload-label').style.display = 'flex';
 }

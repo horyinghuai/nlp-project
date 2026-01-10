@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Resume Portal</title>
+    <title>Smart Resume Analyzer Portal</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
@@ -12,33 +12,36 @@
         <div class="content-wrapper">
             <div class="text-section">
                 <h1>Smart Resume <br>Analyzer Portal</h1>
-                <p>Unlock insights from resumes instantly using Natural Language Processing.</p>
+                <p>Unlock professional insights from resumes instantly using our Natural Language Processing engine.</p>
                 
                 <div class="features">
-                    <span>✔ Skill Extraction</span>
-                    <span>✔ Structured Experience</span>
-                    <span>✔ Automated Email Parsing</span>
+                    <span>🚀 Skill Extraction</span>
+                    <span>📊 Structured Data</span>
+                    <span>⚡ Instant Analysis</span>
                 </div>
             </div>
 
             <div class="upload-section">
                 <div class="glass-card">
-                    <h3>Upload Resume</h3>
-                    <p>Supported Format: PDF</p>
+                    <h3>Get Started</h3>
+                    <p>Upload your resume (PDF) to see the magic.</p>
                     <form action="/analyze" method="post" enctype="multipart/form-data" id="upload-form">
                         
                         <label for="file-upload" class="custom-file-upload" id="upload-label">
-                            📂 Choose PDF
+                            <span style="font-size: 2rem; margin-bottom: 10px;">☁️</span>
+                            <span>Click to browse file here</span>
                         </label>
                         <input id="file-upload" type="file" name="file" accept=".pdf" onchange="handleFileSelect(this)" required>
                         
                         <div id="file-display" class="file-display" style="display: none;">
-                            <span class="file-icon">📄</span>
-                            <span id="file-name">filename.pdf</span>
-                            <button type="button" class="remove-file-btn" onclick="removeFile()" title="Cancel / Remove">×</button>
+                            <div style="display: flex; align-items: center;">
+                                <span class="file-icon">📄</span>
+                                <span id="file-name">filename.pdf</span>
+                            </div>
+                            <button type="button" class="remove-file-btn" onclick="removeFile()" title="Cancel">×</button>
                         </div>
 
-                        <button type="submit" class="analyze-btn">Analyze Resume</button>
+                        <button type="submit" class="analyze-btn">Analyze Resume Now</button>
                     </form>
                 </div>
             </div>
@@ -47,20 +50,23 @@
 
     <div id="chat-widget">
         <div id="chat-header">
-            <span>🤖 Assistant</span>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span>💬</span>
+                <span>Chatbot Assistant</span>
+            </div>
             <span class="close-btn" onclick="toggleChat()">×</span>
         </div>
         <div id="chat-body">
-            <div class="bot-msg">Hi! I'm your Resume Assistant. How can I help you today?</div>
+            <div class="bot-msg">Hi there! 👋 I'm your Resume Assistant. I can help you with uploading files, explaining formats, or technical details. How can I help you today?</div>
         </div>
         <div class="chat-input-area">
-            <input type="text" id="chat-input" placeholder="Type here..." onkeypress="handleEnter(event)">
+            <input type="text" id="chat-input" placeholder="Type your question..." onkeypress="handleEnter(event)">
             <button onclick="sendMessage()">➤</button>
         </div>
     </div>
 
     <button id="chat-toggle" onclick="toggleChat()">
-        <svg viewBox="0 0 24 24" width="30" height="30" fill="white">
+        <svg viewBox="0 0 24 24" width="28" height="28" fill="white">
             <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/>
         </svg>
     </button>

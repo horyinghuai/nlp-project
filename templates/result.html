@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Analysis Report</title>
+    <title>Analysis Report | Smart Resume Analyzer Portal</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body class="result-page">
     <div class="navbar">
-        <h2>Analysis Report</h2>
-        <a href="/" class="nav-btn">Upload New</a>
+        <a href="/" class="nav-btn">← Upload New Resume</a>
+        <h2>Smart Resume Analysis</h2>
     </div>
 
     <div class="result-container">
@@ -15,26 +15,26 @@
             <h1>{{ data.name }}</h1>
             <div class="contact-grid">
                 <div class="contact-item">
-                    <strong>Email:</strong>
-                    <span>{{ data.email }}</span>
+                    <span style="color: #6B7280; font-size: 0.9rem;">Email Address</span>
+                    <strong style="color: #1F2937; font-size: 1.1rem;">{{ data.email }}</strong>
                 </div>
             </div>
         </div>
 
         <div class="details-grid">
             <div class="card">
-                <h3>🛠 Skills Detected</h3>
+                <h3>🛠 Top Skills Detected</h3>
                 <div class="tags">
                     {% for skill in data.skills %}
                         <span class="tag">{{ skill }}</span>
                     {% else %}
-                        <p>No specific skills extracted.</p>
+                        <p style="color: #6B7280; font-style: italic;">No specific skills extracted.</p>
                     {% endfor %}
                 </div>
             </div>
 
             <div class="card full-width">
-                <h3>💼 Experience</h3>
+                <h3>💼 Professional Experience</h3>
                 <div class="experience-list">
                     {% for job in data.experience %}
                         <div class="job-entry">
@@ -49,13 +49,13 @@
                             <p class="job-content">{{ job.content }}</p>
                         </div>
                     {% else %}
-                        <p>No experience section detected.</p>
+                        <p style="color: #6B7280;">No experience section detected.</p>
                     {% endfor %}
                 </div>
             </div>
 
             <div class="card full-width">
-                <h3>🎓 Education</h3>
+                <h3>🎓 Education History</h3>
                 <div class="education-list">
                     {% for edu in data.education %}
                         <div class="edu-entry">
@@ -67,7 +67,7 @@
                             </div>
                         </div>
                     {% else %}
-                        <p>No education section detected.</p>
+                        <p style="color: #6B7280;">No education section detected.</p>
                     {% endfor %}
                 </div>
             </div>
