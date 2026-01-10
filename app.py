@@ -131,7 +131,7 @@ def parse_experience(lines):
     Subheading: Duration
     Normal: Content
     
-    Includes "Sentence Continuity" and "Action Verb" checks to prevent splitting descriptions.
+    Includes checks for "Inc." and other company suffixes.
     """
     jobs = []
     current_job = {
@@ -143,21 +143,25 @@ def parse_experience(lines):
     }
     
     # Keywords to help identify Job Titles
-    # Used \b to ensure "Manager" doesn't match "Managerial" or "Managers" in text unless implicit
     job_keywords = [
         "manager", "engineer", "developer", "consultant", "analyst", "intern", "director", 
         "executive", "assistant", "specialist", "officer", "architect", "admin", 
         "head", "vice", "president", "representative", "coordinator", "clerk", "founder", 
-        "co-founder", "recruiter", "associate", "lead"
+        "co-founder", "recruiter", "associate", "lead",
+        "trainee", "receptionist", "staff", "crew", "member"
     ]
     
     # Blacklist words: If a line starts with these, it is CONTENT, not a header.
-    # These are commonly bolded in resumes (e.g., "Leading to...", "Collaborated with...")
     action_verbs = [
         "leading", "collaborated", "supported", "assisted", "oversaw", "managed", 
         "used", "introduced", "helping", "ensuring", "refined", "created", 
-        "developed", "leveraged", "facilitated", "administered", "reducing", "smooth"
+        "developed", "leveraged", "facilitated", "administered", "reducing", "smooth",
+        "helped", "held", "organized", "monitored", "handled", "analyzed", 
+        "implemented", "optimized", "conducted", "generated", "stored"
     ]
+    
+    # Whitelist suffixes that end with a period but are allowed in headers
+    company_suffixes = ["inc.", "corp.", "ltd.", "co.", "llc.", "p.c.", "pvt.", "dept."]
 
     # Regex for Durations
     date_pattern = r'\b(19|20)\d{2}\b|present|current|ongoing|\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\b'
@@ -168,24 +172,24 @@ def parse_experience(lines):
         line_lower = line_clean.lower()
         
         # --- Context Checks ---
-        is_short_line = len(line_clean) < 85
-        ends_with_period = line_clean.endswith('.')
+        is_short_line = len(line_clean) < 100 
+        ends_with_period = line_clean.endswith('.') 
         
-        # Check if the PREVIOUS line looks like it runs into this one (e.g., ends with comma or 'and')
-        # If yes, this line CANNOT be a header.
+        # NEW: Check if it's a valid company abbreviation ending in dot
+        is_company_suffix = any(line_lower.endswith(s) for s in company_suffixes)
+
+        # Check if the PREVIOUS line looks like it runs into this one
         is_continuation = False
         if i > 0:
             prev_line = lines[i-1].strip().lower()
-            if prev_line and (prev_line.endswith(',') or prev_line.endswith('and') or not prev_line[-1] in ['.', '!', '?']):
-                 # If previous line was a Date or Location, we don't count it as "text flow"
-                 # But if it was content, then this line is likely content too.
+            if prev_line and (prev_line.endswith(',') or prev_line.endswith('and') or not prev_line[-1] in ['.', '!', '?', ':']):
                  if current_job["content"]:
                      is_continuation = True
 
-        # Check for keywords using Word Boundaries
+        # Check for keywords
         has_job_keyword = False
         for k in job_keywords:
-            if re.search(r'\b' + re.escape(k) + r's?\b', line_lower): # s? for optional plural
+            if re.search(r'\b' + re.escape(k) + r's?\b', line_lower): 
                 has_job_keyword = True
                 break
         
@@ -193,19 +197,13 @@ def parse_experience(lines):
         starts_with_action = any(line_lower.startswith(v) for v in action_verbs)
 
         # 1. Job Title Logic
-        # Rules:
-        # - Must contain a Job Keyword
-        # - Must be short-ish
-        # - Must NOT start with an action verb (e.g. "Leading to...")
-        # - Must NOT be a continuation of a previous sentence
-        # - Must NOT look like a date
         if (is_short_line and has_job_keyword and not starts_with_action 
-            and not is_continuation and not has_date):
+            and not is_continuation and not ends_with_period):
             
-            # Close previous job
             if current_job["title"]: 
                 current_job["content"] = "\n".join(current_job["content"])
-                current_job["company"] = current_job["location"]
+                if not current_job["company"] and current_job["location"]:
+                    current_job["company"] = current_job["location"]
                 jobs.append(current_job)
                 current_job = {"title": "", "location": "", "duration": "", "content": [], "company": ""}
             
@@ -214,26 +212,34 @@ def parse_experience(lines):
 
         # 2. Duration Logic
         if (is_short_line and has_date and current_job["title"] 
-            and not current_job["duration"] and not starts_with_action and not is_continuation):
-            current_job["duration"] = line_clean
+            and not starts_with_action and not is_continuation and not ends_with_period):
+            
+            if not current_job["duration"]:
+                current_job["duration"] = line_clean
+            else:
+                current_job["duration"] += " | " + line_clean
             continue
 
-        # 3. Location Logic
-        # STRICT CHECK: Only accept location if we are NOT in the middle of content text flow.
+        # 3. Location / Company Logic
+        # CHANGED: Allow lines ending in period IF they are in the company_suffixes whitelist
         if (is_short_line and not has_date and current_job["title"] 
-            and not current_job["location"] and not current_job["content"] 
-            and not starts_with_action):
-            current_job["location"] = line_clean
+            and not starts_with_action and not is_continuation 
+            and (not ends_with_period or is_company_suffix)):
+            
+            if not current_job["company"]:
+                current_job["company"] = line_clean
+            elif not current_job["location"]:
+                current_job["location"] = line_clean
             continue
             
         # 4. Content Logic
-        # Everything else is content
         current_job["content"].append(line_clean)
             
     # Save the last job entry
     if current_job["title"] or current_job["content"]:
         current_job["content"] = "\n".join(current_job["content"])
-        current_job["company"] = current_job["location"]
+        if not current_job["company"] and current_job["location"]:
+            current_job["company"] = current_job["location"]
         jobs.append(current_job)
         
     return jobs
