@@ -1,11 +1,8 @@
-============================================================
-SYSTEM MANUAL: SMART RESUME ANALYZER PORTAL  
-BAXI 3413 – Natural Language Processing
-============================================================
+# SYSTEM MANUAL: SMART RESUME ANALYZER PORTAL  
+## BAXI 3413 – Natural Language Processing
 
 ## 1. INTRODUCTION
-The Smart Resume Analyzer Portal is a web-based application that uses Natural Language Processing (NLP) techniques to extract key information such as Name, Email, Skills, Experience and Education from resume PDF files.  
-The system also includes an interactive chatbot to assist users.
+The Smart Resume Analyzer Portal is a web-based application that uses Natural Language Processing (NLP) techniques to extract key information such as Name, Email, Skills, Experience and Education from resume PDF files. The system also includes an interactive chatbot to assist users.
 
 ## 2. SYSTEM REQUIREMENTS
 - Operating System: Windows, macOS, or Linux  
