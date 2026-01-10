@@ -22,6 +22,7 @@ def extract_section(text, section_name):
     """
     text_lower = text.lower()
     
+    # UPDATED: Added 'certification' (singular), 'key achievements' to stop list
     headers = {
         "education": ["education", "academic background", "academic history", "qualifications", "education & qualifications"],
         "experience": ["experience", "work history", "employment", "work experience", "professional experience", "career history", "career summary"],
@@ -29,7 +30,9 @@ def extract_section(text, section_name):
         "projects": ["projects", "personal projects", "academic projects"],
         "references": ["references", "referees"],
         "languages": ["languages"],
-        "summary": ["summary", "profile", "objective", "about me"]
+        "summary": ["summary", "profile", "objective", "about me"],
+        "certifications": ["certifications", "certification", "credentials", "licenses", "courses", "awards", "honors", "activities"],
+        "achievements": ["key achievements", "achievements", "accomplishments"]
     }
 
     start_index = -1
@@ -77,8 +80,8 @@ def extract_section(text, section_name):
 def parse_skills(lines):
     """
     Extracts skills individually.
-    Splits by delimiters (comma, fullstop, etc) and newlines.
-    CRITICAL: Does NOT split if text is inside parentheses e.g., "Microsoft (Excel, Word)".
+    Splits by delimiters (comma, fullstop, double space) and newlines.
+    Filters out noise like job titles, dates, and watermark text.
     """
     # 1. Join lines with newline to treat as one block
     text = "\n".join(lines)
@@ -87,9 +90,13 @@ def parse_skills(lines):
     current_skill = ""
     paren_depth = 0
     
-    # Delimiters that separate skills
+    # Delimiters: Added double space handling logic below, strict delimiters here
     delimiters = [',', '.', ';', ':', '|', '/', '•', '·', '\n']
     
+    # Pre-split by double spaces (often used in resumes to separate columns visually)
+    # Replaces double spaces with a safe delimiter (comma) before processing
+    text = text.replace("  ", ",")
+
     for char in text:
         if char == '(':
             paren_depth += 1
@@ -99,7 +106,6 @@ def parse_skills(lines):
                 paren_depth -= 1
             current_skill += char
         elif char in delimiters and paren_depth == 0:
-            # Only split if we are NOT inside parentheses
             clean_skill = current_skill.strip()
             if clean_skill:
                 found_skills.append(clean_skill)
@@ -107,18 +113,53 @@ def parse_skills(lines):
         else:
             current_skill += char
             
-    # Append the last skill if exists
     if current_skill.strip():
         found_skills.append(current_skill.strip())
 
     # 2. Filter and Cleanup
-    stop_words = ["skills", "technologies", "include", "following", "proficient", "knowledge", "frameworks", "tools", "competencies", "experienced", "with", "ability", "to", "and", "the"]
+    
+    # Stop words for noise
+    stop_words = [
+        "skills", "technologies", "include", "following", "proficient", "knowledge", 
+        "frameworks", "tools", "competencies", "experienced", "with", "ability", 
+        "to", "and", "the", "certification", "certified", "course", "courses",
+        "provided", "by", "powered", "enhancv", "www", "http", "https", "com", "page",
+        "email", "linkedin"
+    ]
+    
+    # Terms that indicate this "skill" is actually a Job Title or Experience line bleeding in
+    job_indicators = ["manager", "assistant", "director", "coordinator", "intern", "consultant"]
+    
+    # Action verbs (if a line starts with these, it's likely a job description)
+    action_verbs = ["managed", "led", "developed", "created", "assisted", "coordinated", "analyzed"]
+    
     final_skills = []
     
     for s in list(set(found_skills)):
         s_clean = s.strip()
-        # Filter: length > 1, not just digits, and not a stop word
-        if len(s_clean) > 1 and not s_clean.isdigit() and s_clean.lower() not in stop_words:
+        s_lower = s_clean.lower()
+        
+        # Validation Checks:
+        # 1. Not too short (>1), not too long (<40)
+        # 2. Not digits
+        # 3. Not a stop word
+        # 4. No URL indicators
+        # 5. No Job Title keywords (prevents "Assistant Marketing Manager" appearing as a skill)
+        # 6. No Date patterns (prevents "2014-2017" appearing as a skill)
+        # 7. Doesn't start with a bullet point char that wasn't cleaned
+        
+        is_valid = True
+        
+        if len(s_clean) < 2 or len(s_clean) > 40: is_valid = False
+        if s_clean.isdigit(): is_valid = False
+        if s_lower in stop_words: is_valid = False
+        if "www." in s_lower or ".com" in s_lower: is_valid = False
+        
+        if any(job in s_lower for job in job_indicators): is_valid = False
+        if any(s_lower.startswith(verb) for verb in action_verbs): is_valid = False
+        if re.search(r'\d{4}', s_lower): is_valid = False # Detects years like 2020
+        
+        if is_valid:
             final_skills.append(s_clean)
     
     return final_skills
@@ -175,7 +216,7 @@ def parse_experience(lines):
         is_short_line = len(line_clean) < 100 
         ends_with_period = line_clean.endswith('.') 
         
-        # NEW: Check if it's a valid company abbreviation ending in dot
+        # Check if it's a valid company abbreviation ending in dot
         is_company_suffix = any(line_lower.endswith(s) for s in company_suffixes)
 
         # Check if the PREVIOUS line looks like it runs into this one
@@ -221,7 +262,6 @@ def parse_experience(lines):
             continue
 
         # 3. Location / Company Logic
-        # CHANGED: Allow lines ending in period IF they are in the company_suffixes whitelist
         if (is_short_line and not has_date and current_job["title"] 
             and not starts_with_action and not is_continuation 
             and (not ends_with_period or is_company_suffix)):
