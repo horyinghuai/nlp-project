@@ -10,20 +10,20 @@ The Smart Resume Analyzer Portal is a web-based application that uses Natural La
 - Web Browser: Chrome, Edge, or Firefox  
 
 ## 3. INSTALLATION INSTRUCTIONS
-Step 1: Unzip the project folder named nlp_project.  
-Step 2: Open your terminal or command prompt.  
-Step 3: Navigate to the project directory using the command:  
-cd path/to/nlp_project  
-Step 4: Install the required Python libraries using the command:  
-pip install -r requirements.txt  
+**Step 1:** Unzip the project folder named nlp_project.  
+
+**Step 2:** Open your terminal or command prompt.  
+
+**Step 3:** Navigate to the project directory using the command: *cd path/to/nlp_project*  
+
+**Step 4:** Install the required Python libraries using the command: *pip install -r requirements.txt*  
 
 ## 4. HOW TO RUN THE SYSTEM
-Step 1: In the terminal, run the application using:  
-python app.py  
-Step 2: A message will appear showing:  
-The terminal will display the local URL (usually http://127.0.0.1:5000)
-Step 3: Open your web browser and go to:  
-http://127.0.0.1:5000  
+**Step 1:** In the terminal, run the application using: *python app.py*  
+
+**Step 2:** A message will appear showing: The terminal will display the local URL (usually `http://127.0.0.1:5000`)
+
+**Step 3:** Open your web browser and go to: `http://127.0.0.1:5000` 
 
 ## 5. USER GUIDE
 - Upload Resume: Click “Choose File”, select a PDF resume, and click “Analyze Resume”.  
