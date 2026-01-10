@@ -376,17 +376,29 @@ def chat():
         "upload": "Click 'Choose PDF' to select a file.",
         "format": "We only support PDF files.",
         "experience": "I separate Job Titles, Locations, Durations and Content.",
-        "manual": "Check 'README_System_Manual.txt' in the folder.",
-        "hello": "Hi! I'm your Resume Assistant.",
-        "default": "I can help with uploading, formats, and explaining how I work."
+        "education": "I identify universities, degrees, and graduation years.",
+        "skills": "I extract skills by matching keywords against a predefined database.",
+        "hello": "Hi! I'm your Resume Assistant. How can I help you today?",
+        "tech": "I use Python, Flask, and Rule-Based NLP with Regex to parse PDFs.",
+        "creator": "This system was created by Group A4 for the BAXI 3413 Natural Language Processing project.",
+        "privacy": "Your data is processed locally and deleted immediately after analysis.",
+        "cost": "This system is 100% free to use.",
+        "feedback": "You can contact our team for any bug reports.",
+        "default": "I apologize, but as a Resume Assistant, I cannot help with unrelated topics. Please try asking questions like 'How do I upload a resume?' or 'What formats are supported?'"
     }
     
     reply = responses["default"]
     if any(x in user_message for x in ["upload", "start", "file"]): reply = responses["upload"]
     elif "format" in user_message or "pdf" in user_message: reply = responses["format"]
-    elif "experience" in user_message or "education" in user_message: reply = responses["experience"]
-    elif "hello" in user_message or "hi" in user_message: reply = responses["hello"]
-    elif "manual" in user_message: reply = responses["manual"]
+    elif "experience" in user_message: reply = responses["experience"]
+    elif "education" in user_message: reply = responses["education"]
+    elif "skill" in user_message: reply = responses["skills"]
+    elif "work" in user_message or "nlp" in user_message: reply = responses["tech"]
+    elif "who" in user_message or "create" in user_message: reply = responses["creator"]
+    elif "safe" in user_message or "data" in user_message: reply = responses["privacy"]
+    elif "free" in user_message or "cost" in user_message or "price" in user_message: reply = responses["cost"]
+    elif "bug" in user_message or "error" in user_message or "feedback" in user_message: reply = responses["feedback"]
+    elif re.search(r'\b(hello|hi)\b', user_message): reply = responses["hello"]
 
     return jsonify({"reply": reply})
 

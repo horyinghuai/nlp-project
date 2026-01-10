@@ -24,7 +24,7 @@ pip install -r requirements.txt
 Step 1: In the terminal, run the application using:  
 python app.py  
 Step 2: A message will appear showing:  
-Running on http://127.0.0.1:5000  
+The terminal will display the local URL (usually http://127.0.0.1:5000)
 Step 3: Open your web browser and go to:  
 http://127.0.0.1:5000  
 
@@ -35,8 +35,13 @@ http://127.0.0.1:5000
 
 ## 6. CHATBOT COMMANDS (FAQs)
 Users may try asking the following questions:
-- How do I upload a resume?  
-- What formats are supported?  
-- How does the NLP work?  
-- Who created this system?  
-- Is my data safe?  
+1. How do I upload a resume?  
+2. What formats are supported?  
+3. How does the NLP work?  
+4. Who created this system?  
+5. Is my data safe?  
+6. How is experience processed?  
+7. How is education extracted?  
+8. How do you find skills?  
+9. Is this system free?  
+10. How do I report a bug?
